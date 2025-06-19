@@ -1,72 +1,239 @@
-version: "3.4"
-
 services:
-  catalogdb:
-    image: postgres
-
-  basketdb:
-    image: postgres
-
-  distributedcache:
-    image: redis
-
-  orderdb:
-    image: mcr.microsoft.com/mssql/server
-
-  messagebroker:
-    image: rabbitmq:management
-
-  identitydb:
-    image: mcr.microsoft.com/mssql/server
-
+  # Identity Server
   identity.api:
-    image: ${DOCKER_REGISTRY-}identityapi
     build:
       context: .
       dockerfile: Services/Identity/Identity.API/Dockerfile
+    container_name: identity.api
+    ports:
+      - "6007:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=identitydb;Database=IdentityDb;User Id=sa;Password=SwN12345678;Encrypt=false;TrustServerCertificate=true;
+      - JwtSettings__SecretKey=YourSuperSecretKeyThatIsAtLeast256BitsLong!ForToyLandApp2024
+      - JwtSettings__Issuer=http://identity.api
+      - JwtSettings__Audience=shopping-spa
+      - JwtSettings__ExpirationMinutes=60
+    depends_on:
+      - identitydb
+    networks:
+      - toyland-network
 
-  catalog.api:
-    image: ${DOCKER_REGISTRY-}catalogapi
-    build:
-      context: .
-      dockerfile: Services/Catalog/Catalog.API/Dockerfile
-
-  basket.api:
-    image: ${DOCKER_REGISTRY-}basketapi
-    build:
-      context: .
-      dockerfile: Services/Basket/Basket.API/Dockerfile
-
-  discount.grpc:
-    image: ${DOCKER_REGISTRY-}discountgrpc
-    build:
-      context: .
-      dockerfile: Services/Discount/Discount.Grpc/Dockerfile
-
-  ordering.api:
-    image: ${DOCKER_REGISTRY-}orderingapi
-    build:
-      context: .
-      dockerfile: Services/Ordering/Ordering.API/Dockerfile
-
+  # API Gateway
   yarpapigateway:
-    image: ${DOCKER_REGISTRY-}yarpapigateway
     build:
       context: .
       dockerfile: ApiGateways/YarpApiGateway/Dockerfile
+    container_name: yarpapigateway
+    ports:
+      - "6004:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - IdentityServerSettings__Authority=http://identity.api
+      - IdentityServerSettings__Audience=shopping-spa
+      - IdentityServerSettings__RequireHttpsMetadata=false
+      - JwtSettings__SecretKey=YourSuperSecretKeyThatIsAtLeast256BitsLong!ForToyLandApp2024
+      - JwtSettings__Issuer=http://identity.api
+      - JwtSettings__Audience=shopping-spa
+      - JwtSettings__ExpirationMinutes=60
+    depends_on:
+      - identity.api
+    networks:
+      - toyland-network
 
-  shopping.web:
-    image: ${DOCKER_REGISTRY-}shoppingweb
+  # Catalog Service
+  catalog.api:
     build:
       context: .
-      dockerfile: WebApps/Shopping.Web/Dockerfile
+      dockerfile: Services/Catalog/Catalog.API/Dockerfile
+    container_name: catalog.api
+    ports:
+      - "6001:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Database=Host=catalogdb;Database=CatalogDb;Username=postgres;Password=SwN12345678
+      - IdentityServerSettings__Authority=http://identity.api
+      - IdentityServerSettings__RequireHttpsMetadata=false
+    depends_on:
+      - catalogdb
+    networks:
+      - toyland-network
 
+  # Basket Service
+  basket.api:
+    build:
+      context: .
+      dockerfile: Services/Basket/Basket.API/Dockerfile
+    container_name: basket.api
+    ports:
+      - "6002:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Database=Host=basketdb;Database=BasketDb;Username=postgres;Password=SwN12345678
+      - ConnectionStrings__Redis=redis:6379
+      - GrpcSettings__DiscountUrl=http://discount.grpc
+      - IdentityServerSettings__Authority=http://identity.api
+      - IdentityServerSettings__Audience=shopping-spa
+      - IdentityServerSettings__RequireHttpsMetadata=false
+      - JwtSettings__SecretKey=YourSuperSecretKeyThatIsAtLeast256BitsLong!ForToyLandApp2024
+      - JwtSettings__Issuer=http://identity.api
+      - JwtSettings__Audience=shopping-spa
+      - JwtSettings__ExpirationMinutes=60
+    depends_on:
+      basketdb:
+        condition: service_started
+      redis:
+        condition: service_started
+      discount.grpc:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - toyland-network
+
+  # Discount gRPC Service
+  discount.grpc:
+    build:
+      context: .
+      dockerfile: Services/Discount/Discount.Grpc/Dockerfile
+    container_name: discount.grpc
+    ports:
+      - "6003:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=discountdb;Database=DiscountDb;User Id=sa;Password=SwN12345678;Encrypt=false;TrustServerCertificate=true;
+    depends_on:
+      discountdb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - toyland-network
+
+  # Ordering Service
+  ordering.api:
+    build:
+      context: .
+      dockerfile: Services/Ordering/Ordering.API/Dockerfile
+    container_name: ordering.api
+    ports:
+      - "6005:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=orderingdb;Database=OrderingDb;User Id=sa;Password=SwN12345678;Encrypt=false;TrustServerCertificate=true;
+      - IdentityServerSettings__Authority=http://identity.api
+      - IdentityServerSettings__Audience=shopping-spa
+      - IdentityServerSettings__RequireHttpsMetadata=false
+    depends_on:
+      orderingdb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - toyland-network
+
+  # React Web App
   shopping.react:
-    image: ${DOCKER_REGISTRY-}shoppingreact
     build:
       context: .
       dockerfile: WebApps/Shopping.React/Dockerfile
+    container_name: shopping.react
+    ports:
+      - "6006:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:6004
+      - REACT_APP_IDENTITY_URL=http://localhost:6007
+      - NODE_ENV=production
+    depends_on:
+      - yarpapigateway
+    networks:
+      - toyland-network
 
-volumes:
-  postgres_catalog:
-  postgres_basket:
+  # Databases
+  identitydb:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: identitydb
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=SwN12345678
+    ports:
+      - "1433:1433"
+    networks:
+      - toyland-network
+
+  catalogdb:
+    image: postgres:15
+    container_name: catalogdb
+    environment:
+      - POSTGRES_DB=CatalogDb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=SwN12345678
+    ports:
+      - "5433:5432"
+    networks:
+      - toyland-network
+
+  discountdb:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: discountdb
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=SwN12345678
+    ports:
+      - "1435:1433"
+    networks:
+      - toyland-network
+
+  orderingdb:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: orderingdb
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=SwN12345678
+    ports:
+      - "1436:1433"
+    networks:
+      - toyland-network
+
+  basketdb:
+    image: postgres:15
+    container_name: basketdb
+    environment:
+      - POSTGRES_DB=BasketDb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=SwN12345678
+    ports:
+      - "5432:5432"
+    networks:
+      - toyland-network
+
+  # Redis for Basket caching
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - toyland-network
+
+  # RabbitMQ for messaging
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - toyland-network
+
+networks:
+  toyland-network:
+    driver: bridge

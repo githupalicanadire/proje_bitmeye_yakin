@@ -1,10 +1,12 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContext.js";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Header from "./components/Layout/Header";
 import Footer from "./components/Layout/Footer";
+import TokenDebug from "./components/TokenDebug";
+import AdminPanel from "./components/AdminPanel";
 import HomePage from "./pages/HomePage";
 import ProductsPage from "./pages/ProductsPage";
 import CartPage from "./pages/CartPage";
@@ -22,6 +24,7 @@ function App() {
   return (
     <AuthProvider>
       <div className="app">
+        <TokenDebug />
         <Header />
         <main className="main-content">
           <Routes>
@@ -97,10 +100,7 @@ function App() {
               path="/admin"
               element={
                 <ProtectedRoute>
-                  <div className="container mt-4">
-                    <h2>⚙️ Admin Panel</h2>
-                    <p>Admin paneli geliştirme aşamasında...</p>
-                  </div>
+                  <AdminPanel />
                 </ProtectedRoute>
               }
             />

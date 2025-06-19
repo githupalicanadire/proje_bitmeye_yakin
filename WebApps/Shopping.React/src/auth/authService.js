@@ -1,8 +1,10 @@
 // OIDC yerine direct JWT authentication kullanın
 class AuthService {
-    private apiUrl = "http://localhost:6007/api";
+    constructor() {
+        this.apiUrl = "http://localhost:6007/api";
+    }
 
-    public async login(username: string, password: string): Promise<any> {
+    async login(username, password) {
         try {
             console.log("🔐 Starting login process...");
 
@@ -18,7 +20,7 @@ class AuthService {
                 const error = await response.json();
                 console.error("❌ Login failed:", error);
                 throw new Error(error.message || 'Login failed');
-        }
+            }
 
             const data = await response.json();
             console.log("✅ Login successful:", data);
@@ -34,7 +36,7 @@ class AuthService {
         }
     }
 
-    public async logout(): Promise<void> {
+    async logout() {
         try {
             console.log("🚪 Logging out...");
             
@@ -58,16 +60,16 @@ class AuthService {
         }
     }
 
-    public getUser(): any {
+    getUser() {
         const userData = localStorage.getItem('user');
         return userData ? JSON.parse(userData) : null;
     }
 
-    public getAccessToken(): string | null {
+    getAccessToken() {
         return localStorage.getItem('access_token');
     }
 
-    public isAuthenticated(): boolean {
+    isAuthenticated() {
         const token = this.getAccessToken();
         if (!token) return false;
 
@@ -90,7 +92,7 @@ class AuthService {
         }
     }
 
-    public async refreshToken(): Promise<boolean> {
+    async refreshToken() {
         try {
             const refreshToken = localStorage.getItem('refresh_token');
             if (!refreshToken) {

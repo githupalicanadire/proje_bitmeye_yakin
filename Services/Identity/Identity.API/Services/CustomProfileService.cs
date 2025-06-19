@@ -60,8 +60,9 @@ public class CustomProfileService : IProfileService
             claims.Add(new Claim(JwtClaimTypes.PreferredUserName, user.UserName ?? ""));
         }
 
-        // Always include username for basket operations (regardless of scope)
+        // CRITICAL: Add username claim for basket operations
         claims.Add(new Claim("username", user.UserName ?? ""));
+        claims.Add(new Claim("preferred_username", user.UserName ?? ""));
         claims.Add(new Claim("user_id", user.Id));
 
         // Add email claims if email scope requested
@@ -78,13 +79,12 @@ public class CustomProfileService : IProfileService
             foreach (var role in roles)
             {
                 claims.Add(new Claim(JwtClaimTypes.Role, role));
+                claims.Add(new Claim("role", role));
             }
         }
 
-        // Filter and return only requested claims
-        context.IssuedClaims = claims
-            .Where(x => requestedClaimTypes.Contains(x.Type))
-            .ToList();
+        // Return all claims (don't filter by requestedClaimTypes for critical claims)
+        context.IssuedClaims = claims;
     }
 
     public async Task IsActiveAsync(IsActiveContext context)

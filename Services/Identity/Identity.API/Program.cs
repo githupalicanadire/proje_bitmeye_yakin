@@ -19,6 +19,9 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using HealthChecks.UI.Client;
 using Microsoft.OpenApi.Models;
 using Identity.API.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +42,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 
 var migrationsAssembly = typeof(Program).Assembly.GetName().Name;
 
+// Configure IdentityServer
 builder.Services.AddIdentityServer(options =>
 {
     // Event configuration
@@ -92,11 +96,32 @@ builder.Services.AddIdentityServer(options =>
     options.TokenCleanupInterval = 3600; // 1 hour
 })
 .AddAspNetIdentity<ApplicationUser>()
-.AddProfileService<CustomProfileService>() // Custom profile service for proper user claims
-.AddDeveloperSigningCredential(); // Development signing credential
+.AddProfileService<CustomProfileService>()
+.AddDeveloperSigningCredential();
 
-// JWT Authentication is handled by IdentityServer itself
-// Removed redundant configuration
+// Add JWT Authentication for API endpoints
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.Authority = "http://localhost:6007";
+    options.RequireHttpsMetadata = false;
+    options.Audience = "shopping-spa";
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = "http://localhost:6007",
+        ValidAudience = "shopping-spa",
+        NameClaimType = "preferred_username",
+        RoleClaimType = "role"
+    };
+});
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -155,6 +180,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseIdentityServer();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

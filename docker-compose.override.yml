@@ -1,176 +1,112 @@
-version: "3.4"
-
 services:
-  catalogdb:
-    container_name: catalogdb
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=CatalogDb
-    restart: always
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_catalog:/var/lib/postgresql/data/
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d CatalogDb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  basketdb:
-    container_name: basketdb
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=BasketDb
-    restart: always
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_basket:/var/lib/postgresql/data/
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d BasketDb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  distributedcache:
-    container_name: distributedcache
-    restart: always
-    ports:
-      - "6379:6379"
-
-  orderdb:
-    container_name: orderdb
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=SwN12345678
-    restart: always
-    ports:
-      - "1433:1433"
-
-  messagebroker:
-    container_name: messagebroker
-    hostname: ecommerce-mq
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-    restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-
-  identitydb:
-    container_name: identitydb
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=SwN12345678
-    restart: always
-    ports:
-      - "1434:1433"
-
+  # Identity Server - Development overrides
   identity.api:
-    container_name: identity.api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Server=identitydb;Database=IdentityDb;User Id=sa;Password=SwN12345678;Encrypt=false;TrustServerCertificate=true;
-    depends_on:
-      - identitydb
-    ports:
-      - "6007:8080"
+      - ASPNETCORE_URLS=http://+:80
+    volumes:
+      - ./Services/Identity/Identity.API:/src/Services/Identity/Identity.API
+      - /src/Services/Identity/Identity.API/bin
+      - /src/Services/Identity/Identity.API/obj
+    command: dotnet watch run --no-launch-profile
 
-  catalog.api:
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__Database=Server=catalogdb;Port=5432;Database=CatalogDb;User Id=postgres;Password=postgres;Include Error Detail=true
-    depends_on:
-      catalogdb:
-        condition: service_healthy
-    ports:
-      - "6000:8080"
-
-  basket.api:
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__Database=Server=basketdb;Port=5432;Database=BasketDb;User Id=postgres;Password=postgres;Include Error Detail=true
-      - ConnectionStrings__Redis=distributedcache:6379
-      - GrpcSettings__DiscountUrl=http://discount.grpc:8080
-      - MessageBroker__Host=amqp://ecommerce-mq:5672
-      - MessageBroker__UserName=guest
-      - MessageBroker__Password=guest
-    depends_on:
-      basketdb:
-        condition: service_healthy
-      distributedcache:
-        condition: service_started
-      discount.grpc:
-        condition: service_started
-      messagebroker:
-        condition: service_started
-    ports:
-      - "6001:8080"
-
-  discount.grpc:
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__Database=Data Source=discountdb
-    ports:
-      - "6002:8080"
-
-  ordering.api:
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__Database=Server=orderdb;Database=OrderDb;User Id=sa;Password=SwN12345678;Encrypt=False;TrustServerCertificate=True
-      - MessageBroker__Host=amqp://ecommerce-mq:5672
-      - MessageBroker__UserName=guest
-      - MessageBroker__Password=guest
-      - FeatureManagement__OrderFullfilment=false
-    depends_on:
-      - orderdb
-      - messagebroker
-    ports:
-      - "6003:8080"
-
+  # API Gateway - Development overrides
   yarpapigateway:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - IdentityServerSettings__Authority=http://identity.api:8080
-      - IdentityServerSettings__Audience=gateway-api
-      - IdentityServerSettings__RequireHttpsMetadata=false
-    depends_on:
-      - identity.api
-      - catalog.api
-      - basket.api
-      - ordering.api
-    ports:
-      - "6004:8080"
+      - ASPNETCORE_URLS=http://+:80
+    volumes:
+      - ./ApiGateways/YarpApiGateway:/src/ApiGateways/YarpApiGateway
+      - /src/ApiGateways/YarpApiGateway/bin
+      - /src/ApiGateways/YarpApiGateway/obj
+    command: dotnet watch run --no-launch-profile
 
-  shopping.web:
+  # Catalog Service - Development overrides
+  catalog.api:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ApiSettings__GatewayAddress=http://yarpapigateway:8080
-    depends_on:
-      - yarpapigateway
-    ports:
-      - "6005:8080"
+      - ASPNETCORE_URLS=http://+:80
+    volumes:
+      - ./Services/Catalog/Catalog.API:/src/Services/Catalog/Catalog.API
+      - /src/Services/Catalog/Catalog.API/bin
+      - /src/Services/Catalog/Catalog.API/obj
+    command: dotnet watch run --no-launch-profile
 
-  shopping.react:
-    container_name: shopping.react
+  # Basket Service - Development overrides
+  basket.api:
     environment:
-      - NODE_ENV=production
-      - REACT_APP_API_URL=http://yarpapigateway:8080
-    depends_on:
-      - yarpapigateway
-    ports:
-      - "6006:80"
-    restart: always
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+    volumes:
+      - ./Services/Basket/Basket.API:/src/Services/Basket/Basket.API
+      - /src/Services/Basket/Basket.API/bin
+      - /src/Services/Basket/Basket.API/obj
+    command: dotnet watch run --no-launch-profile
+
+  # Discount gRPC Service - Development overrides
+  discount.grpc:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+    volumes:
+      - ./Services/Discount/Discount.Grpc:/src/Services/Discount/Discount.Grpc
+      - /src/Services/Discount/Discount.Grpc/bin
+      - /src/Services/Discount/Discount.Grpc/obj
+    command: dotnet watch run --no-launch-profile
+
+  # Ordering Service - Development overrides
+  ordering.api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+    volumes:
+      - ./Services/Ordering/Ordering.API:/src/Services/Ordering/Ordering.API
+      - /src/Services/Ordering/Ordering.API/bin
+      - /src/Services/Ordering/Ordering.API/obj
+    command: dotnet watch run --no-launch-profile
+
+  # Database development settings - SADECE OVERRIDE'LAR
+  identitydb:
+    environment:
+      - MSSQL_PID=Developer
+    volumes:
+      - identity_data:/var/opt/mssql
+
+  catalogdb:
+    environment:
+      - MSSQL_PID=Developer
+    volumes:
+      - catalog_data:/var/opt/mssql
+
+  discountdb:
+    environment:
+      - MSSQL_PID=Developer
+    volumes:
+      - discount_data:/var/opt/mssql
+
+  orderingdb:
+    environment:
+      - MSSQL_PID=Developer
+    volumes:
+      - ordering_data:/var/opt/mssql
+
+  basketdb:
+    volumes:
+      - basket_data:/var/lib/postgresql/data
+
+  redis:
+    volumes:
+      - redis_data:/data
+
+  rabbitmq:
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  identity_data:
+  catalog_data:
+  discount_data:
+  ordering_data:
+  basket_data:
+  redis_data:
+  rabbitmq_data:

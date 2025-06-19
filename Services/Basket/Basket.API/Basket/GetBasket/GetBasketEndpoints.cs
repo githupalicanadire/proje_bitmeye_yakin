@@ -14,9 +14,10 @@ public class GetBasketEndpoints : ICarterModule
             logger.LogInformation("🔍 JWT Claims received: {Claims}",
                 string.Join(", ", claims.Select(c => $"{c.Type}={c.Value}")));
 
-            // Get username from JWT claims
+            // Get username from JWT claims - try multiple claim types
             var username = context.User?.Claims?.FirstOrDefault(x => x.Type == "username")?.Value
                         ?? context.User?.Claims?.FirstOrDefault(x => x.Type == "preferred_username")?.Value
+                        ?? context.User?.Claims?.FirstOrDefault(x => x.Type == "name")?.Value
                         ?? context.User?.Identity?.Name;
 
             logger.LogInformation("👤 Extracted username: {Username}", username);
