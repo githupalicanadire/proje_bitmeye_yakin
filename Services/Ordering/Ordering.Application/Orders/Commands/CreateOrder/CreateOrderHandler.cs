@@ -4,10 +4,40 @@ public class CreateOrderHandler(IApplicationDbContext dbContext)
 {
     public async Task<CreateOrderResult> Handle(CreateOrderCommand command, CancellationToken cancellationToken)
     {
-        //create Order entity from command object
-        //save to database
-        //return result 
+        // Ensure customer exists, create if not
+        var customerId = CustomerId.Of(command.Order.CustomerId);
+        var customer = await dbContext.Customers.FindAsync([customerId], cancellationToken);
+        
+        if (customer == null)
+        {
+            // Create customer from order data
+            customer = Customer.Create(
+                customerId,
+                $"{command.Order.ShippingAddress.FirstName} {command.Order.ShippingAddress.LastName}",
+                command.Order.ShippingAddress.EmailAddress
+            );
+            dbContext.Customers.Add(customer);
+        }
 
+        // Ensure products exist, create if not
+        foreach (var orderItemDto in command.Order.OrderItems)
+        {
+            var productId = ProductId.Of(orderItemDto.ProductId);
+            var product = await dbContext.Products.FindAsync([productId], cancellationToken);
+            
+            if (product == null)
+            {
+                // Create product with default name and price from order item
+                product = Product.Create(
+                    productId,
+                    $"Product {orderItemDto.ProductId}", // Default name
+                    orderItemDto.Price
+                );
+                dbContext.Products.Add(product);
+            }
+        }
+
+        //create Order entity from command object
         var order = CreateNewOrder(command.Order);
 
         dbContext.Orders.Add(order);

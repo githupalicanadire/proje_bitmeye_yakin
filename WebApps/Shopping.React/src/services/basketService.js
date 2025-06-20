@@ -1,6 +1,6 @@
 import api from "./api";
 
-export const basketService = {
+const basketService = {
   // Get current user's basket (using JWT authentication)
   getBasket: async () => {
     try {
@@ -89,7 +89,7 @@ export const basketService = {
       // Backend'in beklediği CheckoutBasketRequest formatı
       // Note: Backend will set userName and customerId from JWT claims
       const checkoutData = {
-        basketCheckoutDto: {
+        BasketCheckoutDto: {
           userName: "", // Backend will override with JWT claims
           customerId: "00000000-0000-0000-0000-000000000000", // Backend will override with JWT claims
           totalPrice: basketCheckout.totalPrice,
@@ -112,10 +112,14 @@ export const basketService = {
         },
       };
 
+      console.log("🎯 Sending checkout data:", checkoutData);
+
       const response = await api.post(
         "/basket-service/basket/checkout",
         checkoutData,
       );
+      
+      console.log("✅ Checkout response:", response.data);
       return response.data;
     } catch (error) {
       console.error("❌ Checkout basket error:", error);
@@ -166,3 +170,9 @@ export const basketService = {
     }
   },
 };
+
+// Debug: Log the service when it's loaded
+console.log("🔧 basketService loaded:", basketService);
+console.log("🔧 basketService.checkoutBasket:", basketService.checkoutBasket);
+
+export { basketService };

@@ -6,7 +6,7 @@ import "./CheckoutPage.css";
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
-  const { getCurrentUser, getCurrentCustomerId, user } = useAuth();
+  const { getCurrentUser, getCurrentUserId, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [basket, setBasket] = useState(null);
@@ -17,21 +17,21 @@ const CheckoutPage = () => {
     lastName: "",
     emailAddress: "",
     addressLine: "",
-    country: "Türkiye",
+    country: "Turkey",
     state: "",
     zipCode: "",
     cardName: "",
     cardNumber: "",
     expiration: "",
     cvv: "",
-    paymentMethod: 1, // Credit Card
+    paymentMethod: 1,
     userName: getCurrentUser(),
   });
 
   const fetchBasket = async () => {
     try {
       setBasketLoading(true);
-      const response = await basketService.getBasket(formData.userName);
+      const response = await basketService.getBasket();
       setBasket(response);
 
       if (!response.items || response.items.length === 0) {
@@ -58,6 +58,7 @@ const CheckoutPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("🔄 Form submitted!");
 
     if (!basket || !basket.items || basket.items.length === 0) {
       setError("Sepetiniz boş. Önce ürün ekleyin.");
@@ -95,12 +96,10 @@ const CheckoutPage = () => {
       const basketCheckout = {
         userName: formData.userName,
         customerId:
-          getCurrentCustomerId() ||
+          getCurrentUserId() ||
           user?.id ||
           "00000000-0000-0000-0000-000000000000",
         totalPrice: basket.totalPrice,
-
-        // Shipping & Billing Address
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         emailAddress: formData.emailAddress.trim(),
@@ -108,10 +107,8 @@ const CheckoutPage = () => {
         country: formData.country.trim(),
         state: formData.state.trim(),
         zipCode: formData.zipCode.trim(),
-
-        // Payment
         cardName: formData.cardName.trim(),
-        cardNumber: formData.cardNumber.replace(/\s/g, ""), // Remove spaces
+        cardNumber: formData.cardNumber.replace(/\s/g, ""),
         expiration: formData.expiration.trim(),
         cvv: formData.cvv.trim(),
         paymentMethod: formData.paymentMethod,
@@ -119,9 +116,53 @@ const CheckoutPage = () => {
 
       console.log("💳 Checkout data:", basketCheckout);
 
-      await basketService.checkoutBasket(basketCheckout);
+      // DİREKT API ÇAĞRISI - BAM BAM BAM!
+      const token = localStorage.getItem("access_token");
+      console.log("🔑 Token:", token ? token.substring(0, 50) + "..." : "NO TOKEN");
 
-      console.log("✅ Checkout successful!");
+      const checkoutData = {
+        BasketCheckoutDto: {
+          userName: "",
+          customerId: "00000000-0000-0000-0000-000000000000",
+          totalPrice: basketCheckout.totalPrice,
+          firstName: basketCheckout.firstName,
+          lastName: basketCheckout.lastName,
+          emailAddress: basketCheckout.emailAddress,
+          addressLine: basketCheckout.addressLine,
+          country: basketCheckout.country,
+          state: basketCheckout.state,
+          zipCode: basketCheckout.zipCode,
+          cardName: basketCheckout.cardName,
+          cardNumber: basketCheckout.cardNumber,
+          expiration: basketCheckout.expiration,
+          cvv: basketCheckout.cvv,
+          paymentMethod: basketCheckout.paymentMethod,
+        },
+      };
+
+      console.log("🎯 Making DIRECT API call to: http://localhost:6004/basket-service/basket/checkout");
+      console.log("🎯 Request data:", checkoutData);
+
+      const response = await fetch("http://localhost:6004/basket-service/basket/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(checkoutData),
+      });
+
+      console.log("🎯 Response status:", response.status);
+      console.log("🎯 Response headers:", Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("🎯 Error response:", errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("✅ Checkout result:", result);
 
       // Store checkout data for confirmation page
       sessionStorage.setItem(
@@ -145,7 +186,6 @@ const CheckoutPage = () => {
 
   useEffect(() => {
     fetchBasket();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (basketLoading) {

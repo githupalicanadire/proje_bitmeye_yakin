@@ -111,11 +111,12 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
                });
 
         builder.Property(o => o.Status)
-            .HasDefaultValue(OrderStatus.Draft)
+            .HasDefaultValue(OrderStatus.Pending)
             .HasConversion(
                 s => s.ToString(),
-                dbStatus => (OrderStatus)Enum.Parse(typeof(OrderStatus), dbStatus));
+                dbStatus => (OrderStatus)Enum.Parse(typeof(OrderStatus), dbStatus))
+            .HasSentinel(OrderStatus.Draft);
 
-        builder.Property(o => o.TotalPrice);
+        builder.Property(o => o.TotalPrice).HasPrecision(18, 2);
     }
 }

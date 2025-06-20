@@ -80,14 +80,10 @@ services:
       - JwtSettings__Audience=shopping-spa
       - JwtSettings__ExpirationMinutes=60
     depends_on:
-      basketdb:
-        condition: service_started
-      redis:
-        condition: service_started
-      discount.grpc:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
+      - basketdb
+      - redis
+      - discount.grpc
+      - rabbitmq
     networks:
       - toyland-network
 
@@ -103,10 +99,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=discountdb;Database=DiscountDb;User Id=sa;Password=SwN12345678;Encrypt=false;TrustServerCertificate=true;
     depends_on:
-      discountdb:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
+      - discountdb
+      - rabbitmq
     networks:
       - toyland-network
 
@@ -125,10 +119,8 @@ services:
       - IdentityServerSettings__Audience=shopping-spa
       - IdentityServerSettings__RequireHttpsMetadata=false
     depends_on:
-      orderingdb:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
+      - orderingdb
+      - rabbitmq
     networks:
       - toyland-network
 
@@ -226,11 +218,6 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - toyland-network
 

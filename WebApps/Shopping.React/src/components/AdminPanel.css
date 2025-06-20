@@ -115,6 +115,26 @@
   color: #721c24;
 }
 
+.success-message {
+  background: #d4edda;
+  color: #155724;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border: 1px solid #c3e6cb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.success-message button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #155724;
+}
+
 .product-form {
   background: white;
   padding: 30px;
@@ -196,6 +216,12 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
+.product-card.editing {
+  border: 2px solid #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  transform: translateY(-2px);
+}
+
 .product-image {
   height: 200px;
   overflow: hidden;
@@ -254,6 +280,43 @@
   gap: 10px;
 }
 
+/* Inline Editing Styles */
+.inline-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inline-input,
+.inline-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.inline-input:focus,
+.inline-textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.inline-textarea {
+  min-height: 60px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.inline-input::placeholder,
+.inline-textarea::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
 .admin-loading {
   text-align: center;
   padding: 50px;
@@ -304,6 +367,10 @@
     margin-right: 0;
     margin-bottom: 8px;
   }
+  
+  .inline-edit-form {
+    gap: 8px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -317,5 +384,13 @@
   
   .admin-header {
     padding: 20px;
+  }
+  
+  .product-info {
+    padding: 15px;
+  }
+  
+  .product-actions {
+    padding: 0 15px 15px 15px;
   }
 } 

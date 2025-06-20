@@ -13,7 +13,7 @@ public static class DependencyInjection
 
         services.AddExceptionHandler<CustomExceptionHandler>();
         services.AddHealthChecks()
-            .AddSqlServer(configuration.GetConnectionString("Database")!);
+            .AddSqlServer(configuration.GetConnectionString("DefaultConnection")!);
 
         return services;
     }
@@ -28,6 +28,13 @@ public static class DependencyInjection
             {
                 ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
             });
+
+        // Add CORS middleware
+        app.UseCors("AllowShoppingApp");
+
+        // Add Authentication and Authorization middleware
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         return app;
     }

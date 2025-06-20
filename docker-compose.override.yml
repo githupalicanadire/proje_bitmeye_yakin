@@ -73,10 +73,8 @@ services:
       - identity_data:/var/opt/mssql
 
   catalogdb:
-    environment:
-      - MSSQL_PID=Developer
     volumes:
-      - catalog_data:/var/opt/mssql
+      - catalog_data:/var/lib/postgresql/data
 
   discountdb:
     environment:

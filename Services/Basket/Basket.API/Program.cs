@@ -91,7 +91,7 @@ builder.Services.AddAuthentication("Bearer")
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateAudience = true,
-            ValidAudience = audience,
+            ValidAudiences = new[] { "basket-api", "shopping-spa", "catalog-api", "ordering-api", "gateway-api" },
             ValidateIssuer = true,
             ValidIssuer = authority,
             ValidateLifetime = true,

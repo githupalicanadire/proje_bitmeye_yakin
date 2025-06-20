@@ -1,0 +1,13 @@
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\bin\Debug\net8.0\BuildingBlocks.Messaging.deps.json
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\bin\Debug\net8.0\BuildingBlocks.Messaging.dll
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\bin\Debug\net8.0\BuildingBlocks.Messaging.pdb
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\obj\Debug\net8.0\BuildingBlocks.Messaging.csproj.AssemblyReference.cache
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\obj\Debug\net8.0\BuildingBlocks.Messaging.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\obj\Debug\net8.0\BuildingBlocks.Messaging.AssemblyInfoInputs.cache
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\obj\Debug\net8.0\BuildingBlocks.Messaging.AssemblyInfo.cs
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\obj\Debug\net8.0\BuildingBlocks.Messaging.csproj.CoreCompileInputs.cache
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\obj\Debug\net8.0\BuildingBlocks.Messaging.sourcelink.json
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\obj\Debug\net8.0\BuildingBlocks.Messaging.dll
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\obj\Debug\net8.0\refint\BuildingBlocks.Messaging.dll
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\obj\Debug\net8.0\BuildingBlocks.Messaging.pdb
+C:\Users\Alican Çağdaş\Desktop\yenir\4\BuildingBlocks\BuildingBlocks.Messaging\obj\Debug\net8.0\ref\BuildingBlocks.Messaging.dll
